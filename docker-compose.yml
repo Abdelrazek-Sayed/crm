@@ -1,0 +1,65 @@
+version: "3.8"
+services:
+    php:
+        build:
+            args:
+                user: Abdelrazek
+                uid: 1000
+            context: .
+            dockerfile: ./docker/Dockerfile
+        volumes:
+            - ./:/var/www/
+            - $HOME/.composer/:$HOME/.composer/
+        environment:
+            - "DB_HOST=mysql"
+            - "DB_DATABASE=task_crm"
+            - "DB_USERNAME=task_crm"
+            - "DB_PASSWORD=task_crm"
+        networks:
+            - service-network
+
+    nginx:
+        image: nginx:alpine
+        container_name: web-server_crm
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "2000:80"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/conf.d:/etc/nginx/conf.d/
+        networks:
+            - service-network
+
+    mysql:
+        image: mariadb:10.5.8
+        volumes:
+            - mysqldata:/var/lib/mysql
+        environment:
+            - "MYSQL_ROOT_PASSWORD=task_crm"
+            - "MYSQL_DATABASE=task_crm"
+            - "MYSQL_USER=task_crm"
+            - "MYSQL_PASSWORD=task_crm"
+        ports:
+            - "3302:3306"
+        networks:
+            - service-network
+
+    phpmyadmin:
+        image: phpmyadmin
+        restart: always
+        ports:
+            - 2001:80
+        environment:
+            - PMA_ARBITRARY=1
+            - PMA_HOST=mysql
+            - UPLOAD_LIMIT=64M
+        networks:
+            - service-network
+
+volumes:
+    mysqldata:
+
+networks:
+    service-network:
+        driver: bridge
